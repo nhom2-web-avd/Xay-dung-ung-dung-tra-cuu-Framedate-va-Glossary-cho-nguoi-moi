@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "nodemon server.js",
+    "dev:server": "npm run build:nestjs && nodemon server.js",
     "dev:client": "vite",
     "build": "tsc -p tsconfig.server.json && vite build",
     "build:nestjs": "tsc -p tsconfig.server.json",

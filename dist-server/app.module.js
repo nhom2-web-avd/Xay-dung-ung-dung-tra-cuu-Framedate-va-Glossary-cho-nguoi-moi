@@ -53,6 +53,7 @@ const glossary_entity_1 = require("./entities/glossary.entity");
 const auth_module_1 = require("./modules/auth/auth.module");
 const character_module_1 = require("./modules/character/character.module");
 const glossary_module_1 = require("./modules/glossary/glossary.module");
+const app_controller_1 = require("./app.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -80,7 +81,7 @@ exports.AppModule = AppModule = __decorate([
                         logging: false,
                         ssl: useSsl
                             ? {
-                                rejectUnauthorized: true,
+                                rejectUnauthorized: false,
                             }
                             : false,
                     };
@@ -92,12 +93,13 @@ exports.AppModule = AppModule = __decorate([
             }),
             serve_static_1.ServeStaticModule.forRoot({
                 rootPath: path.join(__dirname, '../../dist'),
-                exclude: ['/api/(.*)'],
+                exclude: ['/api/(.*)', '/health/(.*)'],
             }),
             auth_module_1.AuthModule,
             character_module_1.CharacterModule,
             glossary_module_1.GlossaryModule,
         ],
+        controllers: [app_controller_1.AppController],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map
