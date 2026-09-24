@@ -23,199 +23,25 @@ function App() {
   const [isCardResetting, setIsCardResetting] = useState(false)
   const [selectionAddImage, setSelectionAddImage] = useState('')
   const [selectionAddImagePosition, setSelectionAddImagePosition] = useState({ x: 0, y: 0 })
+  const [selectionAddImageScale, setSelectionAddImageScale] = useState(1)
+  const [mainCharacterImagePreview, setMainCharacterImagePreview] = useState('')
+  const logoFileInputRef = useRef(null)
   const selectionAddDragRef = useRef(null)
-  const [characterCards, setCharacterCards] = useState([])
-  const [cardUrls, setCardUrls] = useState({})
-  const cardUrlsRef = useRef({})
-  const [glossaries, setGlossaries] = useState([])
-  const [dataError, setDataError] = useState('')
-  const [isDataLoading, setIsDataLoading] = useState(false)
-  const [glossaryForm, setGlossaryForm] = useState({
-    id: null, term: '', definition: '', level: 'basic', video_url: '', image: null
-  })
-  const [characterForm, setCharacterForm] = useState({
-    name: '', debut_date: '', description: '', difficulty: 1, type: '', image: null
-  })
 
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        setIsLoginOpen(false)
-      }
-    }
-
-    document.body.classList.toggle('modal-open', isLoginOpen)
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      document.body.classList.remove('modal-open')
-    }
-  }, [isLoginOpen])
-
-  useEffect(() => {
-    let isMounted = true
-
-    fetch('/cards/manifest.json')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Unable to load card manifest: ${response.status}`)
-        }
-        return response.json()
+  const handleMainCharacterImageChange = (event) => {
+    const file = event.target.files[0] || null
+    setCharacterForm((prev) => ({ ...prev, image: file }))
+    if (file) {
+      const previewUrl = URL.createObjectURL(file)
+      setMainCharacterImagePreview((current) => {
+        if (current) URL.revokeObjectURL(current)
+        return previewUrl
       })
-      .then((manifest) => {
-        if (isMounted) {
-          setCharacterCards(manifest)
-        }
+    } else {
+      setMainCharacterImagePreview((current) => {
+        if (current) URL.revokeObjectURL(current)
+        return ''
       })
-      .catch((error) => {
-        console.error('Unable to load encoded character cards.', error)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  useEffect(() => {
-    if (characterCards.length === 0) {
-      return undefined
-    }
-
-    const intervalId = window.setInterval(() => {
-      setIsCardSliding(true)
-
-      window.setTimeout(() => {
-        setActiveCard((current) => (current + 1) % characterCards.length)
-        setIsCardResetting(true)
-        setIsCardSliding(false)
-        window.requestAnimationFrame(() => {
-          setIsCardResetting(false)
-        })
-      }, 650)
-    }, 4000)
-
-    return () => window.clearInterval(intervalId)
-  }, [characterCards.length])
-
-  useEffect(() => {
-    if (characterCards.length === 0) {
-      return undefined
-    }
-
-    let isMounted = true
-    const indicesToLoad = [activeCard, (activeCard + 1) % characterCards.length]
-
-    Promise.all(indicesToLoad.map(async (index) => {
-      const card = characterCards[index]
-      if (cardUrlsRef.current[card.name]) {
-        return [card.name, cardUrlsRef.current[card.name]]
-      }
-
-      const response = await fetch(`/cards/${encodeURIComponent(card.file)}`)
-      if (!response.ok) {
-        throw new Error(`Unable to load encoded card: ${card.file}`)
-      }
-      const encodedText = await response.text()
-      const objectUrl = decodeBase64Image(encodedText, card.mimeType)
-      cardUrlsRef.current[card.name] = objectUrl
-      return [card.name, objectUrl]
-    }))
-      .then((loadedCards) => {
-        if (isMounted) {
-          setCardUrls((current) => Object.fromEntries([...Object.entries(current), ...loadedCards]))
-        }
-      })
-      .catch((error) => {
-        console.error('Unable to decode character card.', error)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [activeCard, characterCards])
-
-  useEffect(() => () => {
-    Object.values(cardUrlsRef.current).forEach((objectUrl) => URL.revokeObjectURL(objectUrl))
-  }, [])
-
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    setLoginError('')
-
-    const formData = new FormData(event.currentTarget)
-    const username = formData.get('username')
-    const password = formData.get('password')
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      })
-      const payload = await response.json()
-
-      if (!response.ok) {
-        throw new Error(payload.message || 'Đăng nhập thất bại.')
-      }
-
-      window.localStorage.setItem('idol-showdown-token', payload.token)
-      setIsLoginOpen(false)
-      setIsAuthenticated(true)
-      setActivePage('selection')
-    } catch (error) {
-      console.error('Unable to log in.', error)
-      setLoginError(error.message || 'Không thể kết nối tới máy chủ.')
-    }
-  }
-
-  const handleLogout = () => {
-    window.localStorage.removeItem('idol-showdown-token')
-    setIsAuthenticated(false)
-    setActivePage('home')
-  }
-
-  const handleCharacterSubmit = async (event) => {
-    event.preventDefault()
-    const form = new FormData()
-    Object.entries(characterForm).forEach(([key, value]) => {
-      if (value !== null && value !== '') form.append(key, value)
-    })
-    try {
-      await api.createCharacter(form)
-      setCharacterForm({ name: '', debut_date: '', description: '', difficulty: 1, type: '', image: null })
-      setActivePage('selection')
-    } catch (error) {
-      console.error('Unable to create character.', error)
-      setDataError(error.message)
-    }
-  }
-
-  const handleGlossarySubmit = async (event) => {
-    event.preventDefault()
-    const form = new FormData()
-    Object.entries(glossaryForm).forEach(([key, value]) => {
-      if (key !== 'id' && value !== null && value !== '') form.append(key, value)
-    })
-    try {
-      if (glossaryForm.id) await api.updateGlossary(glossaryForm.id, form)
-      else await api.createGlossary(form)
-      setGlossaryForm({ id: null, term: '', definition: '', level: 'basic', video_url: '', image: null })
-      await loadGlossaries()
-    } catch (error) {
-      console.error('Unable to save glossary.', error)
-      setDataError(error.message)
-    }
-  }
-
-  const handleDeleteGlossary = async (id) => {
-    if (!window.confirm('Bạn có chắc muốn xóa thuật ngữ này?')) return
-    try {
-      await api.deleteGlossary(id)
-      await loadGlossaries()
-    } catch (error) {
-      console.error('Unable to delete glossary.', error)
-      setDataError(error.message)
     }
   }
 
@@ -233,6 +59,7 @@ function App() {
 
     const imageUrl = URL.createObjectURL(file)
     setSelectionAddImagePosition({ x: 0, y: 0 })
+    setSelectionAddImageScale(1)
     setSelectionAddImage((currentUrl) => {
       if (currentUrl) {
         URL.revokeObjectURL(currentUrl)
@@ -240,6 +67,11 @@ function App() {
       return imageUrl
     })
     event.target.value = ''
+  }
+
+  const resetSelectionAddImage = () => {
+    setSelectionAddImagePosition({ x: 0, y: 0 })
+    setSelectionAddImageScale(1)
   }
 
   const handleSelectionAddImagePointerDown = (event) => {
@@ -280,7 +112,10 @@ function App() {
     if (selectionAddImage) {
       URL.revokeObjectURL(selectionAddImage)
     }
-  }, [selectionAddImage])
+    if (mainCharacterImagePreview) {
+      URL.revokeObjectURL(mainCharacterImagePreview)
+    }
+  }, [selectionAddImage, mainCharacterImagePreview])
 
   useEffect(() => {
     const handleAuthExpired = () => {
@@ -584,29 +419,66 @@ function App() {
       </button>
 
       <section className="selection-add-image-panel" aria-label="Khu vực thêm ảnh nhân vật">
-        <label className="selection-add-upload" aria-label="Thêm ảnh nhân vật">
-           <span aria-hidden="true">+</span>
-           <input type="file" accept="image/*" onChange={(event) => setCharacterForm({ ...characterForm, image: event.target.files[0] || null })} />
-        </label>
+        {mainCharacterImagePreview ? (
+          <div className="selection-add-main-preview-container">
+            <img src={mainCharacterImagePreview} alt="Ảnh nhân vật chính" className="selection-add-main-preview" />
+            <label className="selection-add-change-btn">
+              Thay đổi ảnh
+              <input type="file" accept="image/*" onChange={handleMainCharacterImageChange} />
+            </label>
+          </div>
+        ) : (
+          <label className="selection-add-upload" aria-label="Thêm ảnh nhân vật">
+            <span aria-hidden="true">+</span>
+            <span className="upload-label-text">Tải lên ảnh nhân vật</span>
+            <input type="file" accept="image/*" onChange={handleMainCharacterImageChange} />
+          </label>
+        )}
       </section>
 
       <section className="selection-add-details" aria-label="Thông tin nhân vật">
-        <label className={`selection-add-logo-slot ${selectionAddImage ? 'has-image' : ''}`}>
+        <div className={`selection-add-logo-slot ${selectionAddImage ? 'has-image' : ''}`}>
           {selectionAddImage ? (
-            <img
-              src={selectionAddImage}
-              alt="Logo nhân vật đã tải lên"
-              style={{ transform: `translate(${selectionAddImagePosition.x}px, ${selectionAddImagePosition.y}px)` }}
-              onPointerDown={handleSelectionAddImagePointerDown}
-              onPointerMove={handleSelectionAddImagePointerMove}
-              onPointerUp={handleSelectionAddImagePointerUp}
-              onPointerCancel={handleSelectionAddImagePointerUp}
-            />
+            <>
+              <div className="selection-add-logo-viewport">
+                <img
+                  src={selectionAddImage}
+                  alt="Logo nhân vật đã tải lên"
+                  style={{
+                    transform: `translate(${selectionAddImagePosition.x}px, ${selectionAddImagePosition.y}px) scale(${selectionAddImageScale})`
+                  }}
+                  onPointerDown={handleSelectionAddImagePointerDown}
+                  onPointerMove={handleSelectionAddImagePointerMove}
+                  onPointerUp={handleSelectionAddImagePointerUp}
+                  onPointerCancel={handleSelectionAddImagePointerUp}
+                />
+              </div>
+              <div className="logo-controls">
+                <button type="button" className="logo-btn" title="Thu nhỏ" onClick={() => setSelectionAddImageScale((s) => Math.max(0.3, +(s - 0.1).toFixed(2)))}>-</button>
+                <input
+                  type="range"
+                  min="0.3"
+                  max="3"
+                  step="0.05"
+                  value={selectionAddImageScale}
+                  onChange={(e) => setSelectionAddImageScale(parseFloat(e.target.value))}
+                  className="logo-scale-slider"
+                  title="Kích thước Logo"
+                />
+                <button type="button" className="logo-btn" title="Phóng to" onClick={() => setSelectionAddImageScale((s) => Math.min(3, +(s + 0.1).toFixed(2)))}>+</button>
+                <button type="button" className="logo-btn text-btn" onClick={resetSelectionAddImage}>Căn giữa</button>
+                <button type="button" className="logo-btn text-btn" onClick={() => logoFileInputRef.current?.click()}>Đổi logo</button>
+              </div>
+            </>
           ) : (
-            <span aria-hidden="true">+</span>
+            <label className="selection-add-logo-placeholder">
+              <span aria-hidden="true">+</span>
+              <span className="placeholder-text">Tải lên logo</span>
+              <input ref={logoFileInputRef} type="file" accept="image/*" onChange={handleSelectionAddImage} style={{ display: 'none' }} aria-label="Tải lên logo nhân vật" />
+            </label>
           )}
-          <input type="file" accept="image/*" onChange={handleSelectionAddImage} aria-label="Tải lên logo nhân vật" />
-        </label>
+          <input ref={logoFileInputRef} type="file" accept="image/*" onChange={handleSelectionAddImage} style={{ display: 'none' }} aria-label="Tải lên logo nhân vật" />
+        </div>
         <form className="selection-add-description data-form" onSubmit={handleCharacterSubmit}>
           <input value={characterForm.name} onChange={(event) => setCharacterForm({ ...characterForm, name: event.target.value })} placeholder="Tên nhân vật" required />
           <input value={characterForm.type} onChange={(event) => setCharacterForm({ ...characterForm, type: event.target.value })} placeholder="Loại nhân vật" />
