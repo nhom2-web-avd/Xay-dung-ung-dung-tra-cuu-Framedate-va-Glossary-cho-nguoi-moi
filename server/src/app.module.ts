@@ -37,7 +37,7 @@ import { GlossaryModule } from './modules/glossary/glossary.module';
           logging: false,
           ssl: useSsl
             ? {
-                rejectUnauthorized: true,
+                rejectUnauthorized: false,
               }
             : false,
         };
