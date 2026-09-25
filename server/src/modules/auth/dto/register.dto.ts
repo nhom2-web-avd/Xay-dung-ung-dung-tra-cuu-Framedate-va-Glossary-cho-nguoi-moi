@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from '../../../entities/user.entity';
+import type { UserRole } from '../../../entities/user.entity';
 
 export class RegisterDto {
   @ApiProperty({ example: 'new_user', description: 'Tên đăng nhập' })
