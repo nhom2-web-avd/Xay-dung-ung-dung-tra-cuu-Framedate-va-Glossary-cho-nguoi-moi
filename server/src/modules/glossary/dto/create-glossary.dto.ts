@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { GlossaryLevel } from '../../../entities/glossary.entity';
+import type { GlossaryLevel } from '../../../entities/glossary.entity';
 
 export class CreateGlossaryDto {
   @ApiProperty({ example: 'Okizeme', description: 'Tên thuật ngữ' })

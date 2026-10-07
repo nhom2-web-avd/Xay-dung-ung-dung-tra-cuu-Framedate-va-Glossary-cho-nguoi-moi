@@ -13,6 +13,7 @@ import { Glossary } from './entities/glossary.entity';
 import { AuthModule } from './modules/auth/auth.module';
 import { CharacterModule } from './modules/character/character.module';
 import { GlossaryModule } from './modules/glossary/glossary.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -49,11 +50,12 @@ import { GlossaryModule } from './modules/glossary/glossary.module';
     }),
     ServeStaticModule.forRoot({
       rootPath: path.join(__dirname, '../../dist'),
-      exclude: ['/api/(.*)'],
+      exclude: ['/api/(.*)', '/health/(.*)'],
     }),
     AuthModule,
     CharacterModule,
     GlossaryModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

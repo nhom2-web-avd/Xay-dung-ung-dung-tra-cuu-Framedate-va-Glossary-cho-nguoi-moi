@@ -23,6 +23,9 @@ function App() {
   const [isCardResetting, setIsCardResetting] = useState(false)
   const [selectionAddImage, setSelectionAddImage] = useState('')
   const [selectionAddImagePosition, setSelectionAddImagePosition] = useState({ x: 0, y: 0 })
+  const [selectionAddImageScale, setSelectionAddImageScale] = useState(1)
+  const [mainCharacterImagePreview, setMainCharacterImagePreview] = useState('')
+  const logoFileInputRef = useRef(null)
   const selectionAddDragRef = useRef(null)
   const [characterCards, setCharacterCards] = useState([])
   const [cardUrls, setCardUrls] = useState({})
@@ -219,6 +222,23 @@ function App() {
     }
   }
 
+  const handleMainCharacterImageChange = (event) => {
+    const file = event.target.files[0] || null
+    setCharacterForm((prev) => ({ ...prev, image: file }))
+    if (file) {
+      const previewUrl = URL.createObjectURL(file)
+      setMainCharacterImagePreview((current) => {
+        if (current) URL.revokeObjectURL(current)
+        return previewUrl
+      })
+    } else {
+      setMainCharacterImagePreview((current) => {
+        if (current) URL.revokeObjectURL(current)
+        return ''
+      })
+    }
+  }
+
   const handleSelectionAddImage = (event) => {
     const [file] = event.target.files
     if (!file) {
@@ -233,6 +253,7 @@ function App() {
 
     const imageUrl = URL.createObjectURL(file)
     setSelectionAddImagePosition({ x: 0, y: 0 })
+    setSelectionAddImageScale(1)
     setSelectionAddImage((currentUrl) => {
       if (currentUrl) {
         URL.revokeObjectURL(currentUrl)
@@ -240,6 +261,11 @@ function App() {
       return imageUrl
     })
     event.target.value = ''
+  }
+
+  const resetSelectionAddImage = () => {
+    setSelectionAddImagePosition({ x: 0, y: 0 })
+    setSelectionAddImageScale(1)
   }
 
   const handleSelectionAddImagePointerDown = (event) => {
@@ -280,7 +306,10 @@ function App() {
     if (selectionAddImage) {
       URL.revokeObjectURL(selectionAddImage)
     }
-  }, [selectionAddImage])
+    if (mainCharacterImagePreview) {
+      URL.revokeObjectURL(mainCharacterImagePreview)
+    }
+  }, [selectionAddImage, mainCharacterImagePreview])
 
   useEffect(() => {
     const handleAuthExpired = () => {
@@ -584,29 +613,66 @@ function App() {
       </button>
 
       <section className="selection-add-image-panel" aria-label="Khu vực thêm ảnh nhân vật">
-        <label className="selection-add-upload" aria-label="Thêm ảnh nhân vật">
-           <span aria-hidden="true">+</span>
-           <input type="file" accept="image/*" onChange={(event) => setCharacterForm({ ...characterForm, image: event.target.files[0] || null })} />
-        </label>
+        {mainCharacterImagePreview ? (
+          <div className="selection-add-main-preview-container">
+            <img src={mainCharacterImagePreview} alt="Ảnh nhân vật chính" className="selection-add-main-preview" />
+            <label className="selection-add-change-btn">
+              Thay đổi ảnh
+              <input type="file" accept="image/*" onChange={handleMainCharacterImageChange} />
+            </label>
+          </div>
+        ) : (
+          <label className="selection-add-upload" aria-label="Thêm ảnh nhân vật">
+            <span aria-hidden="true">+</span>
+            <span className="upload-label-text">Tải lên ảnh nhân vật</span>
+            <input type="file" accept="image/*" onChange={handleMainCharacterImageChange} />
+          </label>
+        )}
       </section>
 
       <section className="selection-add-details" aria-label="Thông tin nhân vật">
-        <label className={`selection-add-logo-slot ${selectionAddImage ? 'has-image' : ''}`}>
+        <div className={`selection-add-logo-slot ${selectionAddImage ? 'has-image' : ''}`}>
           {selectionAddImage ? (
-            <img
-              src={selectionAddImage}
-              alt="Logo nhân vật đã tải lên"
-              style={{ transform: `translate(${selectionAddImagePosition.x}px, ${selectionAddImagePosition.y}px)` }}
-              onPointerDown={handleSelectionAddImagePointerDown}
-              onPointerMove={handleSelectionAddImagePointerMove}
-              onPointerUp={handleSelectionAddImagePointerUp}
-              onPointerCancel={handleSelectionAddImagePointerUp}
-            />
+            <>
+              <div className="selection-add-logo-viewport">
+                <img
+                  src={selectionAddImage}
+                  alt="Logo nhân vật đã tải lên"
+                  style={{
+                    transform: `translate(${selectionAddImagePosition.x}px, ${selectionAddImagePosition.y}px) scale(${selectionAddImageScale})`
+                  }}
+                  onPointerDown={handleSelectionAddImagePointerDown}
+                  onPointerMove={handleSelectionAddImagePointerMove}
+                  onPointerUp={handleSelectionAddImagePointerUp}
+                  onPointerCancel={handleSelectionAddImagePointerUp}
+                />
+              </div>
+              <div className="logo-controls">
+                <button type="button" className="logo-btn" title="Thu nhỏ" onClick={() => setSelectionAddImageScale((s) => Math.max(0.3, +(s - 0.1).toFixed(2)))}>-</button>
+                <input
+                  type="range"
+                  min="0.3"
+                  max="3"
+                  step="0.05"
+                  value={selectionAddImageScale}
+                  onChange={(e) => setSelectionAddImageScale(parseFloat(e.target.value))}
+                  className="logo-scale-slider"
+                  title="Kích thước Logo"
+                />
+                <button type="button" className="logo-btn" title="Phóng to" onClick={() => setSelectionAddImageScale((s) => Math.min(3, +(s + 0.1).toFixed(2)))}>+</button>
+                <button type="button" className="logo-btn text-btn" onClick={resetSelectionAddImage}>Căn giữa</button>
+                <button type="button" className="logo-btn text-btn" onClick={() => logoFileInputRef.current?.click()}>Đổi logo</button>
+              </div>
+            </>
           ) : (
-            <span aria-hidden="true">+</span>
+            <label className="selection-add-logo-placeholder">
+              <span aria-hidden="true">+</span>
+              <span className="placeholder-text">Tải lên logo</span>
+              <input ref={logoFileInputRef} type="file" accept="image/*" onChange={handleSelectionAddImage} style={{ display: 'none' }} aria-label="Tải lên logo nhân vật" />
+            </label>
           )}
-          <input type="file" accept="image/*" onChange={handleSelectionAddImage} aria-label="Tải lên logo nhân vật" />
-        </label>
+          <input ref={logoFileInputRef} type="file" accept="image/*" onChange={handleSelectionAddImage} style={{ display: 'none' }} aria-label="Tải lên logo nhân vật" />
+        </div>
         <form className="selection-add-description data-form" onSubmit={handleCharacterSubmit}>
           <input value={characterForm.name} onChange={(event) => setCharacterForm({ ...characterForm, name: event.target.value })} placeholder="Tên nhân vật" required />
           <input value={characterForm.type} onChange={(event) => setCharacterForm({ ...characterForm, type: event.target.value })} placeholder="Loại nhân vật" />
