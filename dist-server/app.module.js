@@ -80,7 +80,7 @@ exports.AppModule = AppModule = __decorate([
                         logging: false,
                         ssl: useSsl
                             ? {
-                                rejectUnauthorized: true,
+                                rejectUnauthorized: false,
                             }
                             : false,
                     };

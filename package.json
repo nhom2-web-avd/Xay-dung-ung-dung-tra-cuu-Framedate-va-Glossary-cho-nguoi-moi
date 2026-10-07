@@ -9,7 +9,7 @@
     "dev:client": "vite",
     "build": "tsc -p tsconfig.server.json && vite build",
     "build:nestjs": "tsc -p tsconfig.server.json",
-    "start:nestjs": "node dist-server/server/src/main.js",
+    "start:nestjs": "node dist-server/main.js",
     "dev:nestjs": "concurrently \"npm run build:nestjs && npm run start:nestjs\" \"npm run dev:client\"",
     "preview": "vite preview",
     "start:server": "node server.js",
