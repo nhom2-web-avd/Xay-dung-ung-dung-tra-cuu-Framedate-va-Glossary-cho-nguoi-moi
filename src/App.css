@@ -160,7 +160,10 @@ img {
 
 .hero {
   position: relative;
-  min-height: clamp(440px, 48vh, 560px);
+  width: 100%;
+  aspect-ratio: 1500 / 500;
+  min-height: clamp(380px, 34vw, 500px);
+  max-height: 520px;
   isolation: isolate;
   display: flex;
   align-items: stretch;
@@ -170,7 +173,9 @@ img {
   position: absolute;
   inset: 0;
   z-index: -2;
-  background: center / cover no-repeat;
+  background-position: right center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .hero-overlay {
