@@ -15,7 +15,7 @@
 - **Font & Icon:** Pixelify Sans, Podkova, SF Compact Rounded
 
 ### 2. Backend (Máy chủ API & Nghiệp vụ)
-- **Framework:** [NestJS 10](https://nestjs.com/) (Mô hình phân lớp Module, Controller, Service, Repository theo chuẩn Enterprise) kết hợp [Express](https://expressjs.com/)
+- **Framework:** [NestJS 10](https://nestjs.com/) (Mô hình phân lớp Module, Controller, Service, Repository theo chuẩn Enterprise) kết hợp.
 - **Ngôn ngữ:** TypeScript & Node.js (v20+)
 - **ORM (Object-Relational Mapping):** [TypeORM](https://typeorm.io/) - Ánh xạ thực thể CSDL quan hệ, hỗ trợ Repository Pattern, Migration và chống SQL Injection
 - **API Documentation:** [Swagger / OpenAPI 3.0](https://swagger.io/) (`@nestjs/swagger`) được cấu hình tự động tại `/api/docs`
